@@ -1,6 +1,7 @@
 <script>
     export let board = [];
     export let editable = true;  // Initially the board is editable
+    import {validateMove} from '../api.js';  // Import the API functions
     let invalidCells = new Set(); // Track invalid cells as a set of row-col keys
     let message = '';  // Message to display
 

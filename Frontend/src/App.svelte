@@ -1,27 +1,60 @@
 <script>
     import { writable } from 'svelte/store';
     import SudokuBoard from './components/SudokuBoard.svelte';
-    import GameMode from './components/GameMode.svelte'; // Import the GameMode component
+    import HumanGameMode from './components/HumanGameMode.svelte'; 
+    import AIGameMode from './components/AIGameMode.svelte'; // Import AI game mode
+    import {getEasyPuzzle, getHardPuzzle, getMediumPuzzle, solvePuzzle, validateInput} from './api';
+    import { compute_slots } from 'svelte/internal';
 
     const mode = writable('home');
-    let randomBoard = generateRandomBoard();
     let playerType = writable('human');
     let generationMode = writable('easy');
     let customBoard = false;
+    let randomBoard = generateEmptyBoard();
+    let isValid = false;
+async function generateRandomBoard() {
+    console.log("Generating random board");
+    const mode = $generationMode;
+    console.log("Mode: " + mode);
 
-    function generateRandomBoard() {
-        return [
-            [5, 3, 0, 0, 7, 0, 0, 0, 0],
-            [6, 0, 0, 1, 9, 5, 0, 0, 0],
-            [0, 9, 8, 0, 0, 0, 0, 6, 0],
-            [8, 0, 0, 0, 6, 0, 0, 0, 3],
-            [4, 0, 0, 8, 0, 3, 0, 0, 1],
-            [7, 0, 0, 0, 2, 0, 0, 0, 6],
-            [0, 6, 0, 0, 0, 0, 2, 8, 0],
-            [0, 0, 0, 4, 1, 9, 0, 0, 5],
-            [0, 0, 0, 0, 8, 0, 0, 7, 9]
-        ];
+    try {
+        const withTimeout = (promise, ms) => {
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
+            return Promise.race([promise, timeout]);
+        };
+
+        // Easy board
+        if (mode === 'easy') {
+            const data = await withTimeout(getEasyPuzzle(), 5000); // 5 seconds timeout
+            console.log("Easy Puzzle:", data.board);
+            randomBoard = data.board;
+            isValid = true;
+        }
+        // Medium board
+        else if (mode === 'med') {
+            const data = await withTimeout(getMediumPuzzle(), 5000); // 5 seconds timeout
+            console.log("Medium Puzzle:", data.board);
+            randomBoard = data.board;
+            isValid = true;
+        }
+        // Hard board
+        else if (mode === 'hard') {
+            const data = await withTimeout(getHardPuzzle(), 15000); // 5 seconds timeout
+            console.log("Hard Puzzle:", data.board);
+            randomBoard = data.board;
+            isValid = true;
+        }
+        else {
+            randomBoard = generateEmptyBoard();
+            isValid = false;
+        }
+    } catch (error) {
+        console.error("Error fetching puzzle:", error);
+        randomBoard = generateEmptyBoard(); // Fall back to empty board if there's an error
     }
+}
+
+
 	function generateEmptyBoard()
 	{
 		return [
@@ -39,32 +72,52 @@
     // Function to reset the board to an empty state
     function resetBoard() {
         randomBoard = generateEmptyBoard(); // Reset to an empty board
+        isValid = false;
     }
     function changePlayerType(type) {
 		console.log("Player type changed to: " + type);
         playerType.set(type);
     }
 
-    function changeGenerationMode(mode) {
+    async function changeGenerationMode(mode) {
         generationMode.set(mode);
         if (mode === 'custom') {
             customBoard = true;
         } else {
             customBoard = false;
-            randomBoard = generateRandomBoard();
+            generateRandomBoard();
+            console.log("Random board generated.");
+            console.log(randomBoard);
         }
     }
 
     function confirmCustomBoard() {
+        validateInput(randomBoard).then((response) => {
+            if (response.valid) {
+                console.log("Custom board is valid.");
+                isValid = true;
+            } else {
+                alert("Custom board is invalid.");
+                isValid = false;
+            }
+        });
         console.log("Custom board confirmed.");
     }
 
     function startGame() {
-        mode.set('game'); // Set the mode to 'game' to show the game screen
+    console.log("Starting game");
+    console.log("Player type: " + $playerType);
+    if ($playerType === 'ai') {
+        mode.set('ai'); // Set the mode to 'ai' if AI is selected
+    } else {
+        mode.set('game'); // Set to 'game' for human player
     }
+}
 
     function goBack() {
         mode.set('home'); // Set the mode back to 'home' to return to the main menu
+        //resetBoard();
+        resetBoard();
     }
 </script>
 <div class="theme">
@@ -72,16 +125,23 @@
 
     <div class="container">
         <div class="board-container">
-            {#if $mode === 'home'}
-                <SudokuBoard board={randomBoard} editable={customBoard} />
-            {/if}
-
-            {#if $mode === 'game'}
-                <GameMode board={randomBoard} editable={$playerType === 'human'} />
-            {/if}
+            <div class="board-container">
+                {#if $mode === 'home'}
+                    <SudokuBoard board={randomBoard} editable={customBoard} />
+                {/if}
+            
+                {#if $mode === 'game'}
+                    <HumanGameMode board={randomBoard} editable={$playerType === 'human'} />
+                {/if}
+            
+                {#if $mode === 'ai'}
+                    <AIGameMode board={randomBoard} /> <!-- Render AI Game Mode -->
+                {/if}
+            </div>
+            
         </div>
 
-        <div class="menu" class:hide={$mode === 'game'}>
+        <div class="menu" class:hide={$mode === 'game' || $mode=='ai'}>
             <div class="game-controls">
                 <h2>Select Player</h2>
                 <button on:click={() => changePlayerType('human')} class={$playerType === 'human' ? 'selected' : ''}>Human Player</button>
@@ -106,13 +166,19 @@
 
         <!-- Start Game Button centered -->
         {#if $mode === 'home'}
-            <div class="start-button-container">
-                <button on:click={startGame} class="start-button">Start Game</button>
-            </div>
+        <div class="start-button-container">
+            <button 
+                on:click={startGame} 
+                class="start-button" 
+                disabled={!isValid}> <!-- Disable button if isValid is false -->
+                Start Game
+            </button>
+        </div>
+        
         {/if}
 
         <!-- Back Button in game mode -->
-        {#if $mode === 'game'}
+        {#if $mode === 'game' || $mode === 'ai'}
             <div class="back-button-container">
                 <button on:click={goBack} class="back-button">Back</button>
             </div>
@@ -137,7 +203,7 @@
         height: 100%;
         font-family: 'Courier New', monospace;
         color: #00ff00;
-        background-color: #020d02;
+        background-color: #021b02;
     }
 
     .container {
@@ -148,8 +214,7 @@
         max-width: 1000px;
         background-color: #003300;
         padding: 20px;
-        border: 3px solid #020802;
-        box-shadow: 0 0 20px #031003;
+        border: 3px solid #1d441d;
     }
 
     .menu {
@@ -219,6 +284,7 @@
         justify-content: center;
         align-items: center;
         width: 100%;
+        margin-top: 20%;
     }
 
     .start-button {
@@ -297,4 +363,15 @@
     .reset-button:active {
         background-color: #ff3333;
     }
+
+    .start-button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.start-button:disabled:hover {
+    background-color: #cccccc;
+}
+
 </style>
