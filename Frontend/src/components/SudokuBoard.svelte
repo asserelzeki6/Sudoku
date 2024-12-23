@@ -1,36 +1,47 @@
 <script>
     export let board = [];
     export let editable = true;  // Initially the board is editable
-    import {validateMove} from '../api.js';  // Import the API functions
+    import { validateMove } from '../api.js';  // Import the API function
     let invalidCells = new Set(); // Track invalid cells as a set of row-col keys
     let message = '';  // Message to display
 
-    function handleInput(row, col, value) {
+    async function handleInput(row, col, value) {
         if (editable) {
             const parsedValue = value ? parseInt(value, 10) : 0;
-            board[row][col] = parsedValue;
-            console.log(`Updated cell (${row}, ${col}) to ${parsedValue}`);
+            const currentBoard = board.map(r => r.slice());  // Create a copy of the board before the change
 
-            // Create a new set to trigger reactivity
-            const newInvalidCells = new Set(invalidCells);
+            // Send the current board and the move to validateMove
+            const isValid = await validateMove(currentBoard, [{ row, col, value: parsedValue }]);
 
-            // Validate and update invalidCells
-            if (!isValidMove(row, col, parsedValue) || parsedValue < 1 || parsedValue > 9) {
-                newInvalidCells.add(`${row}-${col}`);
-            } else {
-                newInvalidCells.delete(`${row}-${col}`);
-            }
-            //check if any index in invalidCells becmes valid
-            for (let cell of invalidCells) {
-                const [r, c] = cell.split('-').map(Number);
-                if (isValidMove(r, c, board[r][c])) {
-                    newInvalidCells.delete(cell);
+            if (isValid) {
+                board[row][col] = parsedValue;
+                console.log(`Updated cell (${row}, ${col}) to ${parsedValue}`);
+
+                // Create a new set to trigger reactivity
+                const newInvalidCells = new Set(invalidCells);
+
+                // If the move is valid, remove any invalid state
+                if (parsedValue < 1 || parsedValue > 9 || !isValidMove(row, col, parsedValue)) {
+                    newInvalidCells.add(`${row}-${col}`);
+                } else {
+                    newInvalidCells.delete(`${row}-${col}`);
                 }
-            }
-            invalidCells = newInvalidCells; // Assign the new set to trigger reactivity
 
-            // Check if the board is complete and valid
-            checkBoardCompletion();
+                // Check if any previously invalid cells become valid
+                for (let cell of invalidCells) {
+                    const [r, c] = cell.split('-').map(Number);
+                    if (await validateMove(currentBoard, [{ row: r, col: c, value: board[r][c] }])) {
+                        newInvalidCells.delete(cell);
+                    }
+                }
+                invalidCells = newInvalidCells; // Assign the new set to trigger reactivity
+
+                // Check if the board is complete and valid
+                checkBoardCompletion();
+            } else {
+                console.log(`Invalid move at (${row}, ${col}) with value ${parsedValue}`);
+                // Optionally, you can show an error message if the move is invalid
+            }
         }
     }
 
