@@ -53,10 +53,9 @@ def validate_move():
     data = request.json
     board = data['board']
     move = data['move']
-
     sudoko = Backtracking()
     sudoko.board = board
-    return jsonify({"isValid": sudoko.is_valid(move[0], move[1], move[2])}), 200
+    return jsonify({"isValid": sudoko.is_valid(move[0]['row'],move[0]['col'], move[0]['value'])}), 200
 
 
 @app.route('/api/game/solve', methods=['POST'])
