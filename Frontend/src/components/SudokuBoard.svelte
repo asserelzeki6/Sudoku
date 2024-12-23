@@ -29,7 +29,14 @@
             newInvalidCells.delete(`${row}-${col}`);
             invalidCells = newInvalidCells;
             console.log(`Cleared cell (${row}, ${col})`);
+            for (let cell of invalidCells) {
+            const [r, c] = cell.split('-').map(Number);
+            if (isValidMove(r, c, board[r][c])) {
+                newInvalidCells.delete(cell);
+            }
+        }
             return;
+
         }
         const parsedValue = value ? parseInt(value, 10) : 0; 
         
