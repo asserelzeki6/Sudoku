@@ -1,49 +1,71 @@
 <script>
+    import { onMount } from 'svelte';
+
     export let board = [];
     export let editable = true;  // Initially the board is editable
     import { validateMove } from '../api.js';  // Import the API function
     let invalidCells = new Set(); // Track invalid cells as a set of row-col keys
     let message = '';  // Message to display
+    let prefilledCells = new Set();  // Track prefilled cells
 
-    async function handleInput(row, col, value) {
-        if (editable) {
-            const parsedValue = value ? parseInt(value, 10) : 0;
-            const currentBoard = board.map(r => r.slice());  // Create a copy of the board before the change
-
-            // Send the current board and the move to validateMove
-            const isValid = await validateMove(currentBoard, [{ row, col, value: parsedValue }]);
-
-            if (isValid) {
-                board[row][col] = parsedValue;
-                console.log(`Updated cell (${row}, ${col}) to ${parsedValue}`);
-
-                // Create a new set to trigger reactivity
-                const newInvalidCells = new Set(invalidCells);
-
-                // If the move is valid, remove any invalid state
-                if (parsedValue < 1 || parsedValue > 9 || !isValidMove(row, col, parsedValue)) {
-                    newInvalidCells.add(`${row}-${col}`);
-                } else {
-                    newInvalidCells.delete(`${row}-${col}`);
+    onMount(() => {
+        // Initialize prefilled cells
+        for (let row = 0; row < 9; row++) {
+            for (let col = 0; col < 9; col++) {
+                if (board[row][col] !== 0) {
+                    prefilledCells.add(`${row}-${col}`);
                 }
-
-                // Check if any previously invalid cells become valid
-                for (let cell of invalidCells) {
-                    const [r, c] = cell.split('-').map(Number);
-                    if (await validateMove(currentBoard, [{ row: r, col: c, value: board[r][c] }])) {
-                        newInvalidCells.delete(cell);
-                    }
-                }
-                invalidCells = newInvalidCells; // Assign the new set to trigger reactivity
-
-                // Check if the board is complete and valid
-                checkBoardCompletion();
-            } else {
-                console.log(`Invalid move at (${row}, ${col}) with value ${parsedValue}`);
-                // Optionally, you can show an error message if the move is invalid
             }
         }
+    });
+    function handleInput(row, col, value) {
+    console.log(`Input received for cell (${row}, ${col}): ${value}`);
+    if (editable) {
+        if (value === '') {
+            // Clear the cell
+            board[row][col] = 0;
+            // remove  form invald cell if it was invalid
+            const newInvalidCells = new Set(invalidCells);
+            newInvalidCells.delete(`${row}-${col}`);
+            invalidCells = newInvalidCells;
+            console.log(`Cleared cell (${row}, ${col})`);
+            return;
+        }
+        const parsedValue = value ? parseInt(value, 10) : 0; 
+        
+        if (parsedValue < 0 || parsedValue > 9) {
+            console.log(`Invalid input: ${parsedValue}`);
+            return;
+        }
+        board[row][col] = parsedValue;
+        console.log(`Updated cell (${row}, ${col}) to ${parsedValue}`);
+
+        // Create a new set to trigger reactivity
+        const newInvalidCells = new Set(invalidCells);
+
+        // Validate and update invalidCells
+        if (!isValidMove(row, col, parsedValue)) {
+            newInvalidCells.add(`${row}-${col}`);
+        } else {
+            newInvalidCells.delete(`${row}-${col}`);
+        }
+
+        // Check if any index in invalidCells becomes valid
+        for (let cell of invalidCells) {
+            const [r, c] = cell.split('-').map(Number);
+            if (isValidMove(r, c, board[r][c])) {
+                newInvalidCells.delete(cell);
+            }
+        }
+        invalidCells = newInvalidCells;  // Assign the new set to trigger reactivity
+
+        // Check if the board is complete and valid
+        checkBoardCompletion();
     }
+
+
+}
+
 
     // Validate the move for Sudoku rules
     function isValidMove(row, col, value) {
@@ -115,7 +137,8 @@
                         class:invalid={invalidCells.has(`${rowIndex}-${colIndex}`)}
                         class:border-bottom={rowIndex % 3 === 2 && rowIndex !== 8}
                         class:border-right={colIndex % 3 === 2 && colIndex !== 8}
-                        readonly={!editable}
+                        readonly={cell !== 0 && prefilledCells.has(`${rowIndex}-${colIndex}`)} 
+                        class:prefilled={cell !== 0 && prefilledCells.has(`${rowIndex}-${colIndex}`)} 
                         on:input={(e) => {
                             const value = e.target.value;
 
@@ -147,8 +170,9 @@
 <style>
     /* Styling for invalid cells */
     .sudoku-cell.invalid {
-        background-color: #ffcccc;
+        background-color: #c50b0b !important;
         border-color: #ff0000;
+        color: #000;
     }
 
     /* Ensure the container fills the whole screen and is centered */
@@ -226,5 +250,11 @@
         font-weight: bold;
         margin-top: 20px;
         text-align: center;
+    }
+
+    /* Styling for prefilled cells (uneditable) */
+    .sudoku-cell.prefilled {
+        background-color: #222222;  /* Light grey or a color to indicate it's uneditable */
+        color: #00ff00;
     }
 </style>
