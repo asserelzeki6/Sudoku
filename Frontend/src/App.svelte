@@ -93,7 +93,7 @@ async function generateRandomBoard() {
 
     function confirmCustomBoard() {
         validateInput(randomBoard).then((response) => {
-            if (response.valid) {
+            if (response.board) {
                 console.log("Custom board is valid.");
                 isValid = true;
             } else {
