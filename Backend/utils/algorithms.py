@@ -2,6 +2,28 @@ import datetime
 from Backend.utils.Node import Node
 # from Node import Node
 
+def LCV (board, node):
+    lcv = []
+    conflict_map = {i: 0 for i in node.domain}
+    for i in node.domain:
+        for neighbour in getNeighbors(node.i, node.j):
+            if board[neighbour[0]][neighbour[1]] == 0:
+                for j in range(9):
+                    if board[neighbour[0]][j] == 0:
+                        if i in node.domain:
+                            conflict_map[i] += 1
+                    if board[j][neighbour[1]] == 0:
+                        if i in node.domain:
+                            conflict_map[i] += 1
+                for j in range(3*(neighbour[0]//3), 3*(neighbour[0]//3) + 3):
+                    for k in range(3*(neighbour[1]//3), 3*(neighbour[1]//3) + 3):
+                        if board[j][k] == 0:
+                            if i in node.domain:
+                                conflict_map[i] += 1
+    lcv = sorted(conflict_map, key=conflict_map.get)
+    return lcv
+    
+
 def isSolvable(board):
     # for i in range(9):
     #     for j in range(9):
@@ -213,12 +235,12 @@ def backtracking_with_forward_checking(board, assignment, addLogs = False):
 def backtracking(board, assignment, nodes, logs):
     if isComplete(nodes):
         return True
-    node = selectUnassignedNode(board, nodes)
+    node = MRV(board, nodes)
     if node is None:
         return False
     logs.append("-----------------------------------------------------------------------------------------")
     logs.append(f"selected node is {node}")
-    for value in node.domain:
+    for value in LCV(board, node):
         if isValidNode(nodes, node, value):
             # for i in range(9):
             #     for j in range(9):
@@ -227,6 +249,7 @@ def backtracking(board, assignment, nodes, logs):
             #             nodes[i][j].original_domain = nodes[i][j].domain.copy()
             #         logs.append(f"before i:{i} j:{j} board[i][j]:{nodes[i][j].domain} and original domain is {nodes[i][j].original_domain}")
             original_domains = [[nodes[i][j].domain.copy() for j in range(9)] for i in range(9)]
+            logs.append(f"before backtracking i:{i} j:{j} domain is {original_domains[i][j]}")
 
             assignment[(node.i, node.j)] = value
             board[node.i][node.j] = value
@@ -260,7 +283,7 @@ def isComplete(nodes):
                 return False
     return True
 
-def selectUnassignedNode(board, nodes):
+def MRV(board, nodes):
     minDomain = 10
     node = None
     for i in range(9):
@@ -268,6 +291,12 @@ def selectUnassignedNode(board, nodes):
             # if board[i][j] len(nodes[i][j].domain) > 1 and len(nodes[i][j].domain) < minDomain:
             if board[i][j]==0 and len(nodes[i][j].domain) < minDomain:
                 # return nodes[i][j]
+                if len(nodes[i][j].domain) == minDomain:
+                    lcv1 = LCV(board, node)
+                    lcv2 = LCV(board, nodes[i][j])
+                    if lcv1[0] > lcv2[0]:
+                        minDomain = len(nodes[i][j].domain)
+                        node = nodes[i][j]
                 minDomain = len(nodes[i][j].domain)
                 node = nodes[i][j]
     return node
