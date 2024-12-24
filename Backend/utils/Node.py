@@ -6,4 +6,4 @@ class Node:
         self.j = j  # Column index
 
     def __repr__(self):
-        return f"Node(domain={self.domain}, i={self.i}, j={self.j})"
+        return f"Node(i={self.i}, j={self.j}), domain={self.domain}"

@@ -55,11 +55,13 @@ class Backtracking:
     # when generate is pressed
     def generate_puzzle(self, mode):
         self.generate_full_solution()
-        cells_to_remove = 35
+        print("Full solution: ")
+        self.print_board()
+        cells_to_remove = 25
         if mode == "Medium":
-            cells_to_remove = 45  # hard = 55, medium = 45, easy = 35
+            cells_to_remove = 35  # hard = 45, medium = 35, easy = 25
         elif mode == "Hard":
-            cells_to_remove = 55
+            cells_to_remove = 45
 
         non_empty_cells = [(row, col) for row in range(9) for col in range(9)]
         while cells_to_remove > 0:
@@ -120,7 +122,7 @@ class Backtracking:
 
 if __name__ == "__main__":
     sudoku_solver = Backtracking()
-    puzzle = [[1, 1, 0, 0, 0, 0, 0, 0, 0],
+    puzzle = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -129,8 +131,39 @@ if __name__ == "__main__":
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0]]
-    sudoku_solver.generate_puzzle("Easy")
+    # sudoku_solver.board = puzzle
+    # sudoku_solver.print_board()
+    # board = [
+    #     [7,0,2 ,0,5,0 ,0,0,0],
+    #     [1,4,0 ,3,6,2 ,7,8,0],
+    #     [5,8,0 ,9,0,4 ,2,0,1],
+
+    #     [0,9,7 ,0,4,0 ,0,0,2],
+    #     [8,0,5 ,0,0,3 ,4,9,6],
+    #     [0,9,0 ,6,0,1 ,0,7,8],
+
+    #     [0,6,3 ,2,8,9 ,0,0,0],
+    #     [9,0,1 ,5,0,6 ,0,0,4],
+    #     [0,5,8 ,0,1,7 ,9,0,3]
+    # ]
+    board = [ [7, 0, 0,  0, 0, 0,  0, 0, 6],
+              [0, 0, 0,  0, 1, 0,  5, 8, 9],
+              [0, 0, 0,  0, 2, 4,  0, 0, 0],
+
+              [4, 0, 5,  0, 0, 0,  9, 0, 0],
+              [0, 1, 3,  0, 6, 0,  0, 0, 0],
+              [0, 0, 0,  0, 0, 7,  8, 5, 0],
+
+              [0, 0, 0,  0, 0, 6,  0, 0, 0],
+              [3, 0, 6,  0, 0, 5,  2, 0, 0],
+              [5, 2, 0,  0, 9, 0,  0, 0, 8]]
+    sudoku_solver.board = board
     sudoku_solver.print_board()
+    # sudoku_solver.print_board()
+    sudoku_solver.solve_sudoku(True)
+    # sudoku_solver.generate_puzzle("Hard")
+    sudoku_solver.print_board()
+    # sudoku_solver.print_board()
     # print("Validating input puzzle:")
     print(sudoku_solver.validate_input(puzzle))
     #

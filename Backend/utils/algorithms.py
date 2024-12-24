@@ -1,12 +1,13 @@
 import datetime
 from Backend.utils.Node import Node
+# from Node import Node
 
 def isSolvable(board):
-    for i in range(9):
-        for j in range(9):
-            if board[i][j] != 0:
-                if not isValid(board, i, j, board[i][j]):
-                    return False
+    # for i in range(9):
+    #     for j in range(9):
+    #         if board[i][j] != 0:
+    #             if not isValid(board, i, j, board[i][j]):
+    #                 return False
     return True
 
 def printBoard(board, logs):
@@ -26,7 +27,9 @@ def BTS (assignment, board):
         for j in range(9):
             if board[i][j] == 0:
                 for k in range(1,10):
+                    # print(f"i:{i} j:{j} k:{k}")
                     if isValid(board, i, j, k):
+                        # print(f"valid")
                         board[i][j] = k
                         assignment[(i,j)] = k
                         if BTS(assignment,board):
@@ -36,16 +39,71 @@ def BTS (assignment, board):
                 return False
     return True
 
-def isValid(board, row, col, num):
-    for i in range(9):
-        if board[row][i] == num and i != col:
+# def isValid(board, row, col, num):
+#     for i in range(9):
+#         if board[row][i] == num and i != col:
+#             return False
+#         if board[i][col] == num and i != row:
+#             return False
+#         if board[3*(row//3) + i//3][3*(col//3) + i%3] == num and (3*(row//3) + i//3) != row and (3*(col//3) + i%3) != col:
+#             return False
+#     return True
+def isValid(self, row, col, num):
+        if num in self.board[row]:
             return False
-        if board[i][col] == num and i != row:
+        if num in [self.board[i][col] for i in range(9)]:
             return False
-        if board[3*(row//3) + i//3][3*(col//3) + i%3] == num and (3*(row//3) + i//3) != row and (3*(col//3) + i%3) != col:
-            return False
-    return True
+        start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+        for i in range(start_row, start_row + 3):
+            for j in range(start_col, start_col + 3):
+                if self.board[i][j] == num:
+                    return False
+        return True
 
+# def isValid(board, row, col, num):
+#         if num in board[row]:
+#             return False
+#         if num in [board[i][col] for i in range(9)]:
+#             return False
+#         start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+#         for i in range(start_row, start_row + 3):
+#             for j in range(start_col, start_col + 3):
+#                 if board[i][j] == num:
+#                     return False
+#         return True
+
+# def isValid(board, i, j, val):
+#     # Check the row
+#     for col in range(9):
+#         if board[i][col] == val:
+#             return False
+
+#     # Check the column
+#     for row in range(9):
+#         if board[row][j] == val:
+#             return False
+
+#     # Check the 3x3 sub-grid
+#     subgrid_row_start = 3 * (i // 3)
+#     subgrid_col_start = 3 * (j // 3)
+#     for row in range(subgrid_row_start, subgrid_row_start + 3):
+#         for col in range(subgrid_col_start, subgrid_col_start + 3):
+#             if board[row][col] == val:
+#                 return False
+
+#     # If no conflict, return True
+#     return True
+
+
+# def isValid(board, row, col, num):
+#     for i in range(9):
+#         if board[row][i] == num and i != col:
+#             return False
+#         if board[i][col] == num and i != row:
+#             return False
+#         if board[3*(row//3) + i//3][3*(col//3) + i%3] == num and (3*(row//3) + i//3) != row and (3*(col//3) + i%3) != col:
+#             return False
+#     return True
 
 def generateAllArcs():
     arcs = []
@@ -57,7 +115,6 @@ def generateAllArcs():
 
 def generateAllNodes(board):
     nodes = [[None for i in range(9)] for j in range(9)]
-
     for i in range(9):
         for j in range(9):
             node = None
@@ -76,7 +133,7 @@ def ac3(nodes, arcs, logs):
                 return False
             for neighbor in getNeighbors(arc[0][0], arc[0][1]):
                 # print(f"neighbor is {neighbor} and arc[0] is {arc[0]}")
-                if neighbor != arc[1]:
+                if neighbor != arc[1] :
                     # print("added")
                     arcs.append((neighbor, arc[0]))
     return True
@@ -116,20 +173,29 @@ def backtracking_with_forward_checking(board, assignment, addLogs = False):
     logs = []
     logs.append(datetime.datetime.now())
     nodes = generateAllNodes(board)
+    logs.append("-----------------------------------------------------------------------------------------")
+    logs.append("Board before solution")
+    print("Board before solution")
+    printBoard(board, logs)
     if isSolvable(board):
         if(backtracking(board, assignment, nodes, logs)):
             print("Solved Successfully")
             logs.append("Solved Successfully")
+            for i in range(9):
+                for j in range(9):
+                    if board[i][j] == 0:
+                        board[i][j] = nodes[i][j].domain[0]
+                        assignment[(i,j)] = nodes[i][j].domain[0]
         else:
-            print("Unsolvable")
+            print("Unsolvable from backtracking")
             logs.append("Unsolvable")
-        for i in range(9):
-            for j in range(9):
-                if board[i][j] == 0:
-                    board[i][j] = nodes[i][j].domain[0]
-                    assignment[(i,j)] = nodes[i][j].domain[0]
+            if addLogs:
+                writeLogs(logs)
+            return False
+        
         logs.append("-----------------------------------------------------------------------------------------")
-        logs.append("Board after backtracking")
+        logs.append("Board after solution")
+        print("Board after solution")
         printBoard(board, logs)
         # logs.append(board)
         logs.append("-----------------------------------------------------------------------------------------")
@@ -137,24 +203,36 @@ def backtracking_with_forward_checking(board, assignment, addLogs = False):
         logs.append(assignment)
         if addLogs:
             writeLogs(logs)
+
+        return True
+    
     else:
         print("Unsolvable")
+        return False
 
 def backtracking(board, assignment, nodes, logs):
     if isComplete(nodes):
         return True
     node = selectUnassignedNode(board, nodes)
+    if node is None:
+        return False
     logs.append("-----------------------------------------------------------------------------------------")
     logs.append(f"selected node is {node}")
-    node.original_domain = node.domain.copy()
     for value in node.domain:
         if isValidNode(nodes, node, value):
-            node.domain = [value]
+            # for i in range(9):
+            #     for j in range(9):
+            #         # print(f"i:{i} j:{j} board[i][j]:{board[i][j]}")
+            #         if board[i][j] == 0:
+            #             nodes[i][j].original_domain = nodes[i][j].domain.copy()
+            #         logs.append(f"before i:{i} j:{j} board[i][j]:{nodes[i][j].domain} and original domain is {nodes[i][j].original_domain}")
+            original_domains = [[nodes[i][j].domain.copy() for j in range(9)] for i in range(9)]
+
             assignment[(node.i, node.j)] = value
             board[node.i][node.j] = value
             node.domain = [value]
             logs.append("-----------------------------------------------------------------------------------------")
-            logs.append(f"going to the arc with i:{node.i} j:{node.j} value:{value}")
+            logs.append(f"going to the arc with i:{node.i} j:{node.j} value:{value} and domain is {node.domain}")
             if ac3(nodes, generateAllArcs(), logs):
                 logs.append(f"PASSED AC3 with i:{node.i} j:{node.j} value:{value}")
                 if backtracking(board, assignment, nodes, logs):
@@ -163,10 +241,15 @@ def backtracking(board, assignment, nodes, logs):
 
             assignment.pop((node.i, node.j))
             board[node.i][node.j] = 0
+            logs.append("-----------------------------------------------------------------------------------------")
+            logs.append(f"FAILED BACKTRACKING with i:{node.i} j:{node.j} value:{value}")
             for i in range(9):
                 for j in range(9):
-                    if board[i][j] == 0:
-                        nodes[i][j].domain = nodes[i][j].original_domain.copy()
+                    nodes[i][j].domain = original_domains[i][j]
+                    logs.append(f"after backtracking failure i:{i} j:{j} domain becomes {original_domains[i][j]}")
+            logs.append("-----------------------------------------------------------------------------------------")
+        else:
+            logs.append(f"NON VALID : FAILED BACKTRACKING with i:{node.i} j:{node.j} value:{value}")
     return False
 
 
@@ -182,7 +265,9 @@ def selectUnassignedNode(board, nodes):
     node = None
     for i in range(9):
         for j in range(9):
-            if len(nodes[i][j].domain) > 1 and len(nodes[i][j].domain) < minDomain:
+            # if board[i][j] len(nodes[i][j].domain) > 1 and len(nodes[i][j].domain) < minDomain:
+            if board[i][j]==0 and len(nodes[i][j].domain) < minDomain:
+                # return nodes[i][j]
                 minDomain = len(nodes[i][j].domain)
                 node = nodes[i][j]
     return node
@@ -196,26 +281,64 @@ def writeLogs(logs):
             f.write(str(log) + "\n")
 
 def main():
-    board = [
-        [0,0,0 ,0,0,0 ,0,0,0],
-        [0,0,0 ,0,0,3 ,0,0,0],
-        [0,0,1 ,0,2,0 ,0,0,0],
+    board = [ [7, 0, 0,  0, 0, 0,  0, 0, 6],
+              [0, 0, 0,  0, 1, 0,  5, 8, 9],
+              [0, 0, 0,  0, 2, 4,  0, 0, 0],
 
-        [0,0,0 ,5,0,0 ,0,0,0],
-        [0,0,4 ,0,0,0 ,0,0,0],
-        [0,9,0 ,0,0,0 ,0,0,0],
+              [4, 0, 5,  0, 0, 0,  9, 0, 0],
+              [0, 1, 3,  0, 6, 0,  0, 0, 0],
+              [0, 0, 0,  0, 0, 7,  8, 5, 0],
 
-        [0,0,0 ,0,0,0 ,0,0,0],
-        [0,0,0 ,0,0,0 ,0,0,0],
-        [0,0,0 ,0,0,0 ,0,0,0]
-    ]
+              [0, 0, 0,  0, 0, 6,  0, 0, 0],
+              [3, 0, 6,  0, 0, 5,  2, 0, 0],
+              [5, 2, 0,  0, 9, 0,  0, 0, 8]]
+    
+    # board = [ [7, 0, 0, 3, 0, 4, 9, 0, 0],
+    #           [0, 0, 0, 0, 9, 0, 0, 2, 0],
+    #           [0, 0, 0, 0, 0, 0, 4, 0, 7],
+    #           [0, 0, 0, 0, 0, 7, 0, 0, 0],
+    #           [0, 6, 0, 0, 3, 0, 0, 9, 1],
+    #           [0, 0, 2, 5, 4, 0, 0, 0, 0],
+    #           [0, 0, 6, 0, 0, 0, 1, 0, 0],
+    #           [4, 0, 0, 2, 1, 0, 5, 3, 0],
+    #           [0, 0, 3, 0, 0, 6, 0, 4, 0]]
     if isSolvable(board):
         assignment = {}
-        backtracking_with_forward_checking(board, assignment, True)
-        printBoard(board)
-        print(assignment)
+        if(backtracking_with_forward_checking(board, assignment, True)):
+        # if(BTS(assignment, board)):
+            print("Solved Successfully")
+            # for i in range(9):
+            #     print(board[i])
+        else:
+            print("Unsolvable from main awy")
+        # printBoard(board)
+        # print(assignment)
     else:
         print("Unsolvable")
 
 if __name__ == "__main__":
     main()
+
+#  [7, 0, 0,  0, 0, 0,  0, 0, 6]
+#  [0, 0, 0,  0, 1, 0,  5, 8, 9]
+#  [0, 0, 0,  0, 2, 4,  0, 0, 0]
+
+#  [4, 0, 5,  0, 0, 0,  9, 0, 0]
+#  [0, 1, 3,  0, 6, 0,  0, 0, 0]
+#  [0, 0, 0,  0, 0, 7,  8, 5, 0]
+
+#  [0, 0, 0,  0, 0, 6,  0, 0, 0]
+#  [3, 0, 6,  0, 0, 5,  2, 0, 0]
+#  [5, 2, 0,  0, 9, 0,  0, 0, 8]
+
+#    0 1 2 3 4 5 6 7 8
+ ###################   
+# 0  7 3 1 9 5 8 4 2 6
+# 1  6 4 2 7 1 3 5 8 9
+# 2  9 5 8 6 2 4 1 3 7
+# 3  4 7 5 1 8 2 9 6 3
+# 4  8 1 3 5 6 9 7 4 2
+# 5  2 6 9 4 3 7 8 5 1
+# 6  1 8 7 2 4 6 3 9 5
+# 7  3 9 6 8 7 5 2 1 4
+# 8  5 2 4 3 9 1 6 7 8
