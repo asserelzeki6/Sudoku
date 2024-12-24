@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from Backend.Backtracking import Backtracking
+from Backend.utils.algorithms import backtracking_with_forward_checking
 
 app = Flask(__name__)
 CORS(app)
@@ -66,12 +67,19 @@ def solve():
 
     data = request.json
     board = data['board']
+    # addLogs = data['addLogs']
+    print("solving", board)
+    assignment = {}
+    backtracking_with_forward_checking(board, assignment, True)
+    moves = [(key[0], key[1], value) for key, value in assignment.items()]
+    
+    # sudoko = Backtracking()
+    # sudoko.board = board
+    # sudoko.solve_sudoku(False)
+    # sudoko.ai_moves.reverse()
+    # return jsonify({"board": sudoko.board, "moves": sudoko.ai_moves}), 200
 
-    sudoko = Backtracking()
-    sudoko.board = board
-    sudoko.solve_sudoku(False)
-    sudoko.ai_moves.reverse()
-    return jsonify({"board": sudoko.board, "moves": sudoko.ai_moves})
+    return jsonify({"board": board, "moves": moves}), 200
 
 
 

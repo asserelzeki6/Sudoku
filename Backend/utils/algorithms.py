@@ -1,5 +1,5 @@
 import datetime
-from utils.Node import Node
+from Backend.utils.Node import Node
 
 def isSolvable(board):
     for i in range(9):
@@ -112,7 +112,7 @@ def getNeighbors(i, j):
                 neighbors.append((k,l))
     return neighbors
 
-def solve(board, assignment, addLogs = False):
+def backtracking_with_forward_checking(board, assignment, addLogs = False):
     logs = []
     logs.append(datetime.datetime.now())
     nodes = generateAllNodes(board)
@@ -211,7 +211,7 @@ def main():
     ]
     if isSolvable(board):
         assignment = {}
-        solve(board, assignment, True)
+        backtracking_with_forward_checking(board, assignment, True)
         printBoard(board)
         print(assignment)
     else:

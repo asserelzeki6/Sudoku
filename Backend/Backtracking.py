@@ -1,5 +1,5 @@
 import random
-from utils.algorithms import solve
+# from utils.algorithms import backtracking_with_forward_checking
 
 class Backtracking:
     def __init__(self):
@@ -137,14 +137,14 @@ if __name__ == "__main__":
     # print("Solving the puzzle:")
     # sudoku_solver.solve_sudoku(False)
 
-    # Sudoku solver using backtracking and forward checking algorithm
-    assignment = {}
-    solve(puzzle, assignment, True)
-    moves = [(key[0], key[1], value) for key, value in assignment.items()]
-    print(moves)
-    sudoku_solver.board = puzzle
-    sudoku_solver.ai_moves = moves
-    ##################################################################
+    # # Sudoku solver using backtracking and forward checking algorithm
+    # assignment = {}
+    # backtracking_with_forward_checking(puzzle, assignment, True)
+    # moves = [(key[0], key[1], value) for key, value in assignment.items()]
+    # print(moves)
+    # sudoku_solver.board = puzzle
+    # sudoku_solver.ai_moves = moves
+    # ##################################################################
     
     # sudoku_solver.ai_moves.reverse()
     # print(sudoku_solver.ai_moves)
